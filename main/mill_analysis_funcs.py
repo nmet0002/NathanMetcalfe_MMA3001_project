@@ -63,3 +63,31 @@ def convert_data(mat_data):
     df_mill_filtered = df_mill_cleaned[~df_mill_cleaned['case'].isin(cases_to_remove)].copy()
 
     return df_mill_filtered
+
+def calculate_avg_magnitude(signal_array):
+    """
+    Takes the time series entries, calculates and returns
+    the average magnitude
+    Inputs: 
+        signal_array: The time series numpy array
+    Returns:
+        np.mean(np.abs(arr)): The average magnitude of the array
+    """
+    arr = np.array(signal_array, dtype=float)
+    if len(arr) == 0:
+        return 0.0
+    return np.mean(np.abs(arr))
+
+def calculate_peak_magnitude(signal_array):
+    """
+    Takes the time series entries and finds the peak
+    magnitude reached
+    Inputs:
+        signal_array: The time series numpy array
+    Returns:
+        np.max(np.abs(arr)): The peak magnitude of the array
+    """
+    arr = np.array(signal_array, dtype=float)
+    if len(arr) == 0:
+        return 0.0
+    return np.max(np.abs(arr))

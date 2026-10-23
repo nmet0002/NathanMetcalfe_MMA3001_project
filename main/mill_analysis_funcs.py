@@ -4,8 +4,10 @@ def convert_data(mat_data):
     """
     Takes the raw MAT file loaded via SciPy and creates a filtered 
     pandas dataframe ready to analyse
-    Inputs:
+    
+    Args:
         mat_data: The scipy loaded MAT file (scipy.io.loadmat(file_path))
+        
     Outputs:
         df_mill_filtered: Filtered pandas dataframe
     """
@@ -68,8 +70,10 @@ def calculate_avg_magnitude(signal_array):
     """
     Takes the time series entries, calculates and returns
     the average magnitude
-    Inputs: 
+    
+    Args: 
         signal_array: The time series numpy array
+        
     Returns:
         np.mean(np.abs(arr)): The average magnitude of the array
     """
@@ -82,8 +86,10 @@ def calculate_peak_magnitude(signal_array):
     """
     Takes the time series entries and finds the peak
     magnitude reached
-    Inputs:
+    
+    Args:
         signal_array: The time series numpy array
+        
     Returns:
         np.max(np.abs(arr)): The peak magnitude of the array
     """
@@ -91,3 +97,169 @@ def calculate_peak_magnitude(signal_array):
     if len(arr) == 0:
         return 0.0
     return np.max(np.abs(arr))
+
+def predict_flank_wear(model):
+    """
+    Uses the trained Neural Network model to estimate
+    flank wear in mm given certain parameters. Designed for
+    smooth user experience, demonstration purposes
+    
+    Args:
+        model: The trained MLP NN model
+        
+    Returns:
+        predicted_vb: The estimated flank wear in mm
+
+    Raises:
+        ValueError: If any parameter inputs are invalid
+    """
+    print("--- Mill Flank Wear (VB) Prediction Tool ---")
+
+    # Validate DOC (Depth of Cut)
+    while True:
+        try:
+            doc_val = float(input("Enter DOC (mm) [e.g., 0.75, 1.5]: "))
+            if doc_val <= 0:
+                print("DOC must be a positive number. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for DOC.")
+
+    # Validate Feed
+    while True:
+        try:
+            feed_val = float(input("Enter Feed (mm/min) [e.g., 0.25, 0.5]: "))
+            if feed_val <= 0:
+                print("Feed must be a positive number. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for Feed.")
+
+    # Validate Material (1 or 2)
+    while True:
+        try:
+            material_val = int(input("Enter Material (1 for Cast Iron, 2 for Steel): "))
+            if material_val not in [1, 2]:
+                print("Material must be exactly 1 (Cast Iron) or 2 (Steel). Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter 1 or 2.")
+
+    # Validate Time
+    while True:
+        try:
+            time_val = float(input("Enter Time (minutes): "))
+            if time_val < 0:
+                print("Time cannot be negative. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for Time.")
+
+    # Prepare features as a pandas DataFrame with matching feature names to avoid the UserWarning
+    input_data = pd.DataFrame([[time_val, doc_val, feed_val, material_val]],
+                              columns=['time', 'DOC', 'feed', 'material'])
+
+    # Predict using the trained MLP pipeline
+    predicted_vb = model.predict(input_data)[0]
+
+    print("\n--- Prediction Results ---")
+    print(f"Inputs -> Time: {time_val} min | DOC: {doc_val} mm | Feed: {feed_val} | Material: {'Cast Iron (1)' if material_val == 1 else 'Steel (2)'}")
+    print(f"Predicted Flank Wear (VB): {predicted_vb:.4f} mm")
+    return predicted_vb
+
+
+def predict_time_to_threshold(model):
+    """
+    Uses root finding methods to estimate the time when a certain
+    threshold flank wear will be reached.
+
+    Args:
+        model: The trained NN MLP model
+
+    Returns:
+        target_time: The time at which threshold VB is estimated to be reached, in minutes
+
+    Raises:
+        ValueError: If any parameter inputs are invalid
+    """
+    
+    print("--- Time to Flank Wear (VB) Threshold Tool ---")
+
+    # Validate Threshold VB
+    while True:
+        try:
+            threshold_vb = float(input("Enter target VB threshold (mm) [e.g., 0.3, 0.5]: "))
+            if threshold_vb <= 0:
+                print("Threshold VB must be positive. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for VB.")
+
+    # Validate DOC (Depth of Cut)
+    while True:
+        try:
+            doc_val = float(input("Enter DOC (mm) [e.g., 0.75, 1.5]: "))
+            if doc_val <= 0:
+                print("DOC must be a positive number. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for DOC.")
+
+    # Validate Feed
+    while True:
+        try:
+            feed_val = float(input("Enter Feed (mm/min) [e.g., 0.25, 0.5]: "))
+            if feed_val <= 0:
+                print("Feed must be a positive number. Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter a numerical value for Feed.")
+
+    # Validate Material (1 or 2)
+    while True:
+        try:
+            material_val = int(input("Enter Material (1 for Cast Iron, 2 for Steel): "))
+            if material_val not in [1, 2]:
+                print("Material must be exactly 1 (Cast Iron) or 2 (Steel). Please try again.")
+                continue
+            break
+        except ValueError:
+            print("Invalid input. Please enter 1 or 2.")
+
+    # Define the objective function for root-finding:
+    # We want to find a time 't' where model_prediction(t) - threshold_vb = 0
+    def objective_function(t):
+        input_data = pd.DataFrame([[t, doc_val, feed_val, material_val]],
+                                  columns=['time', 'DOC', 'feed', 'material'])
+        return model.predict(input_data)[0] - threshold_vb
+
+    # Establish bounds for finding the root (Time from 0 to 200 minutes)
+    t_min, t_max = 0.0, 200.0
+
+    try:
+        # Check if a root exists in the given interval
+        f_min = objective_function(t_min)
+        f_max = objective_function(t_max)
+
+        if f_min * f_max > 0:
+            if f_min > 0:
+                print(f"\n[Notice] Even at t = 0 min, wear ({f_min + threshold_vb:.4f} mm) is already above the threshold of {threshold_vb} mm.")
+            else:
+                print(f"\n[Notice] The threshold of {threshold_vb} mm is not reached within the maximum safe range of {t_max} minutes.")
+        else:
+            # Solve for time where prediction equals threshold
+            target_time = brentq(objective_function, t_min, t_max)
+            print("\n--- Estimation Results ---")
+            print(f"Inputs -> Target VB: {threshold_vb} mm | DOC: {doc_val} mm | Feed: {feed_val} | Material: {'Cast Iron (1)' if material_val == 1 else 'Steel (2)'}")
+            print(f"Estimated Time to reach threshold: {target_time:.2f} minutes")
+            return target_time
+
+    except Exception as e:
+        print(f"An error occurred during root-finding search: {e}")

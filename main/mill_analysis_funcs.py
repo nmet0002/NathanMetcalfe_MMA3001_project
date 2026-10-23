@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.optimize import brentq
 def convert_data(mat_data):
     """
     Takes the raw MAT file loaded via SciPy and creates a filtered 

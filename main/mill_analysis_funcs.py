@@ -9,7 +9,7 @@ def convert_data(mat_data):
     Args:
         mat_data: The scipy loaded MAT file (scipy.io.loadmat(file_path))
         
-    Outputs:
+    Returns:
         df_mill_filtered: Filtered pandas dataframe
     """
 

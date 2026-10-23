@@ -110,9 +110,6 @@ def predict_flank_wear(model):
         
     Returns:
         predicted_vb: The estimated flank wear in mm
-
-    Raises:
-        ValueError: If any parameter inputs are invalid
     """
     print("--- Mill Flank Wear (VB) Prediction Tool ---")
 
@@ -183,9 +180,6 @@ def predict_time_to_threshold(model):
 
     Returns:
         target_time: The time at which threshold VB is estimated to be reached, in minutes
-
-    Raises:
-        ValueError: If any parameter inputs are invalid
     """
     
     print("--- Time to Flank Wear (VB) Threshold Tool ---")

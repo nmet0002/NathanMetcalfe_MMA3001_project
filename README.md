@@ -22,6 +22,7 @@ tool will reach an inputted threshold flank wear to be replaced
    can be used to evaluate the model in different ways
 
 6. EXTENSION: Vibration Data
+
    If you wish, there is another model that can be trained with vibration data included. This isn't something
    usually accessible in advance of machining, but could be used to estimate wear at the current moment in time!
 

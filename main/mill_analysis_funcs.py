@@ -72,7 +72,7 @@ def calculate_avg_magnitude(signal_array):
     Takes the time series entries, calculates and returns
     the average magnitude
     
-    Args: 
+    Args:
         signal_array: The time series numpy array
         
     Returns:
